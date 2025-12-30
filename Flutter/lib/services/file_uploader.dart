@@ -1,72 +1,44 @@
-import "package:file_picker/file_picker.dart";
-import "package:dio/dio.dart";
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'dart:typed_data';
 
 class FileUploader {
-  final Dio _dio = Dio();
-  final String baseUrl = const String.fromEnvironment("API_BASE", defaultValue: "http://127.0.0.1:8000");
+  final String baseUrl;
 
-  Future<void> pickAndUploadFile() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ["pdf","docx"]);
-    if (result == null) return;
-    final filePath = result.files.single.path!;
-    final fileName = result.files.single.name;
+  FileUploader({String? baseUrl})
+      : baseUrl = baseUrl ?? 
+          const String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8000');
 
-    final formData = FormData.fromMap({
-      "file": await MultipartFile.fromFile(filePath, filename: fileName),
-    });
+  Future<Map<String, dynamic>> uploadFile({
+    String? filePath,
+    Uint8List? fileBytes,
+    String? fileName,
+  }) async {
+    final url = Uri.parse('$baseUrl/api/v1/upload');
+    var request = http.MultipartRequest('POST', url);
 
-    final res = await _dio.post("\$baseUrl/api/v1/upload", data: formData);
-    if (res.statusCode == 200 || res.statusCode == 201) {
-      print("Upload success: \${res.data}");
-    } else {
-      throw Exception("Upload failed \${res.statusCode}");
-    }
-  }
-}
-import 'package:flutter/foundation.dart';
-
-Future<void> pickAndUploadFile() async {
-  final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf','docx']);
-  if (result != null) {
     if (kIsWeb) {
-      final fileBytes = result.files.single.bytes;
-      final fileName = result.files.single.name;
-      await ApiService().analyzeFile(fileBytes: fileBytes, fileName: fileName);
+      if (fileBytes == null || fileName == null) {
+        throw Exception('fileBytes and fileName are required for web');
+      }
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        fileBytes,
+        filename: fileName,
+      ));
     } else {
-      final filePath = result.files.single.path!;
-      await ApiService().analyzeFile(filePath: filePath);
+      if (filePath == null) {
+        throw Exception('filePath is required for mobile');
+      }
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
     }
-  }
-}
-import 'package:flutter/foundation.dart';
-import '../api_service.dart';
 
-Future<void> pickAndUploadFile() async {
-  final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf','docx']);
-  if (result != null) {
-    if (kIsWeb) {
-      final fileBytes = result.files.single.bytes;
-      final fileName = result.files.single.name;
-      await ApiService().analyzeFile(fileBytes: fileBytes, fileName: fileName);
-    } else {
-      final filePath = result.files.single.path!;
-      await ApiService().analyzeFile(filePath: filePath);
-    }
-  }
-}
-import 'package:flutter/foundation.dart';
-import '../api_service.dart';
+    var response = await request.send();
+    var responseBody = await response.stream.bytesToString();
 
-Future<void> pickAndUploadFile() async {
-  final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf','docx']);
-  if (result != null) {
-    if (kIsWeb) {
-      final fileBytes = result.files.single.bytes;
-      final fileName = result.files.single.name;
-      await ApiService().analyzeFile(fileBytes: fileBytes, fileName: fileName);
-    } else {
-      final filePath = result.files.single.path!;
-      await ApiService().analyzeFile(filePath: filePath);
-    }
+    return {
+      'statusCode': response.statusCode,
+      'body': responseBody,
+    };
   }
 }

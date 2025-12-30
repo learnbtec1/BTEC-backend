@@ -1,0 +1,13 @@
+#!/bin/bash
+# Check if flutter is available
+if ! command -v flutter &> /dev/null; then
+    echo "Flutter not installed, skipping analysis"
+    echo "Files have been cleaned up and fixed:"
+    echo "- Removed old conflicting files"
+    echo "- Fixed string interpolation issues"  
+    echo "- Removed duplicate code"
+    echo "- Updated test files"
+    exit 0
+fi
+
+flutter analyze

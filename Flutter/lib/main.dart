@@ -1,84 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'features/auth/screens/login_screen.dart';
+import 'core/constants/app_constants.dart';
 
 void main() {
-  runApp(MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Set preferred orientations
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  
+  runApp(const BTECApp());
 }
 
-class MyApp extends StatelessWidget {
+class BTECApp extends StatelessWidget {
+  const BTECApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      title: 'منصة Flutter',
-      theme: ThemeData(primarySwatch: Colors.blue, fontFamily: 'Cairo'),
-      home: HomePage(),
-    );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  final List<String> items = [
-    'الصفحة الأولى',
-    'الصفحة الثانية',
-    'الصفحة الثالثة',
-    'الصفحة الرابعة',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('القائمة الرئيسية'),
-        centerTitle: true,
-      ),
-      body: ListView.builder(
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          return Card(
-            margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: ListTile(
-              leading: Icon(Icons.star, color: Colors.blue),
-              title: Text(items[index]),
-              trailing: Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DetailPage(title: items[index]),
-                  ),
-                );
-              },
+      theme: ThemeData(
+        primaryColor: AppConstants.primaryColor,
+        fontFamily: 'Cairo',
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppConstants.primaryColor,
+          brightness: Brightness.light,
+        ),
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+        ),
+        cardTheme: CardTheme(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.grey[50],
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('تم الضغط على الزر بنجاح!')),
-          );
-        },
-        child: Icon(Icons.add),
-      ),
-    );
-  }
-}
-
-class DetailPage extends StatelessWidget {
-  final String title;
-
-  DetailPage({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Text(
-          'أنت الآن في صفحة: $title',
-          style: TextStyle(fontSize: 20),
+          ),
         ),
       ),
+      home: const LoginScreen(),
     );
   }
 }

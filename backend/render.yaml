@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: btec-backend
+    env: python
+    region: frankfurt
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: btec-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PORT
+        value: 10000
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+databases:
+  - name: btec-db
+    databaseName: btec_db
+    user: btec_user
+    region: frankfurt

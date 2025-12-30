@@ -23,7 +23,7 @@ dependencies = [
     "pyjwt<3.0.0,>=2.8.0",
     # BTEC Engine dependencies
     "textdistance>=4.6.0",
-    "python-Levenshtein>=0.25.0",
+    "python-levenshtein>=0.25.0",
     "openai-whisper>=20231117",
 ]
 

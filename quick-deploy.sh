@@ -23,7 +23,9 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-# Function to check command exists
+# Function to check if a command exists in PATH
+# Usage: command_exists <command_name>  
+# Returns: 0 if exists, 1 if not
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }

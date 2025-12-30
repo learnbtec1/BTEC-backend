@@ -2,11 +2,16 @@
 
 from typing import List, Optional
 from pydantic import EmailStr
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
+    
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True
+    )
     
     # API Settings
     PROJECT_NAME: str = "BTEC Backend API"
@@ -36,10 +41,6 @@ class Settings(BaseSettings):
     # Superuser (for initial setup)
     FIRST_SUPERUSER: EmailStr = "admin@example.com"
     FIRST_SUPERUSER_PASSWORD: str = "changethis"
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
 
 settings = Settings()

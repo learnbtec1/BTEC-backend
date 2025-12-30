@@ -1,7 +1,7 @@
 """User Pydantic schemas"""
 
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 
 
 class UserBase(BaseModel):
@@ -22,12 +22,11 @@ class UserUpdate(UserBase):
 
 class UserInDB(UserBase):
     """Schema for user in database"""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     is_active: bool
     is_superuser: bool
-    
-    class Config:
-        from_attributes = True
 
 
 class User(UserInDB):

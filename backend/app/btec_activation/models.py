@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlmodel import JSON, Column, Field, SQLModel, String
 
@@ -15,7 +15,7 @@ class ActivationKey(SQLModel, table=True):
     student_email: str | None = Field(index=True, default=None)
     specialization: str | None = None
     level: str | None = None
-    issued_at: datetime = Field(default_factory=datetime.utcnow)
+    issued_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     expires_at: datetime
     is_active: bool = Field(default=True)
     is_revoked: bool = Field(default=False)

@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from sqlmodel import Session, select
@@ -19,7 +19,7 @@ def generate_token_payload(
     validity_days: int
 ) -> dict:
     """Generate JWT payload for activation token."""
-    iat = datetime.utcnow()
+    iat = datetime.now(UTC)
     exp = iat + timedelta(days=validity_days)
     return {
         "jti": jti,
@@ -45,7 +45,7 @@ def create_activation_token(
         jti, student_id, email, specialization, level, validity_days
     )
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-    expires_at = datetime.utcfromtimestamp(payload["exp"])
+    expires_at = datetime.fromtimestamp(payload["exp"], tz=UTC)
     return token, expires_at
 
 
@@ -76,14 +76,14 @@ async def store_activation_key(
 
 
 def verify_token(token: str) -> dict:
-    """Verify and decode JWT token."""
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except jwt.ExpiredSignatureError:
-        raise
-    except jwt.InvalidTokenError:
-        raise
+    """Verify and decode JWT token.
+
+    Raises:
+        jwt.ExpiredSignatureError: If token has expired
+        jwt.InvalidTokenError: If token is invalid
+    """
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    return payload
 
 
 async def consume_activation_token(
@@ -100,7 +100,7 @@ async def consume_activation_token(
     if key.is_revoked or not key.is_active:
         return key
     key.used_count += 1
-    key.last_used_at = datetime.utcnow()
+    key.last_used_at = datetime.now(UTC)
     key.last_used_ip = used_ip
     session.commit()
     session.refresh(key)

@@ -1,5 +1,6 @@
 import uuid
 
+import jwt
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 
 from app.api.deps import CurrentUser, SessionDep
@@ -69,7 +70,7 @@ async def activate(
     """
     try:
         payload = verify_token(req.token)
-    except Exception:
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         raise HTTPException(
             status_code=400,
             detail="رمز تفعيل غير صالح أو منتهي الصلاحية"

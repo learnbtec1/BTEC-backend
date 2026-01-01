@@ -1,7 +1,8 @@
 import { createBrowserRouter } from "react-router-dom";
 import AppLayout from "@/layout/AppLayout";
 
-import Login from "@/pages/Login";
+// استيراد الصفحات
+import Login from "@/pages"; // لأن index.tsx هو الصفحة الرئيسية داخل pages
 import Dashboard from "@/pages/Dashboard";
 import Upload from "@/pages/Upload";
 import Results from "@/pages/Results";
@@ -9,8 +10,10 @@ import Students from "@/pages/Students";
 import Assignments from "@/pages/Assignments";
 
 export const router = createBrowserRouter([
+  // صفحة تسجيل الدخول
   { path: "/login", element: <Login /> },
 
+  // الصفحة الرئيسية (الداشبورد)
   {
     path: "/",
     element: (
@@ -20,6 +23,7 @@ export const router = createBrowserRouter([
     ),
   },
 
+  // صفحة الرفع
   {
     path: "/upload",
     element: (
@@ -29,6 +33,7 @@ export const router = createBrowserRouter([
     ),
   },
 
+  // صفحة النتائج
   {
     path: "/results",
     element: (
@@ -38,6 +43,7 @@ export const router = createBrowserRouter([
     ),
   },
 
+  // صفحة الطلاب
   {
     path: "/students",
     element: (
@@ -47,6 +53,7 @@ export const router = createBrowserRouter([
     ),
   },
 
+  // صفحة الواجبات
   {
     path: "/assignments",
     element: (

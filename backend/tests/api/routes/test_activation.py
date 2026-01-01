@@ -1,10 +1,10 @@
+import jwt
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
-from app.core.config import settings
 from app.btec_activation.models import ActivationKey
 from app.btec_activation.services import verify_token
-import jwt
+from app.core.config import settings
 
 
 def test_generate_activation_key(
@@ -28,12 +28,12 @@ def test_generate_activation_key(
     assert "token" in response
     assert "jti" in response
     assert "expires_at" in response
-    
+
     # Verify token can be decoded
     payload = verify_token(response["token"])
     assert payload["sub"] == data["student_id"]
     assert payload["email"] == data["student_email"]
-    
+
     # Verify key is stored in database
     statement = select(ActivationKey).where(ActivationKey.jti == response["jti"])
     result = db.exec(statement)
@@ -46,7 +46,7 @@ def test_generate_activation_key(
 
 
 def test_activate_key(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+    client: TestClient, superuser_token_headers: dict[str, str], _db: Session
 ) -> None:
     """Test activating with a valid token."""
     # First generate a key
@@ -64,7 +64,7 @@ def test_activate_key(
     )
     assert r.status_code == 200
     token = r.json()["token"]
-    
+
     # Now activate with the token
     activate_data = {"token": token}
     r = client.post(
@@ -89,14 +89,15 @@ def test_activate_invalid_token(client: TestClient) -> None:
 
 
 def test_activate_expired_token(
-    client: TestClient, superuser_token_headers: dict[str, str]
+    client: TestClient, _superuser_token_headers: dict[str, str]
 ) -> None:
     """Test activating with an expired token."""
     # Create a token that's already expired
-    from app.btec_activation.services import SECRET_KEY, ALGORITHM
-    from datetime import datetime, timedelta
     import uuid
-    
+    from datetime import datetime, timedelta
+
+    from app.btec_activation.services import ALGORITHM, SECRET_KEY
+
     expired_payload = {
         "jti": str(uuid.uuid4()),
         "sub": "STU99999",
@@ -107,7 +108,7 @@ def test_activate_expired_token(
         "exp": int((datetime.utcnow() - timedelta(days=1)).timestamp())
     }
     expired_token = jwt.encode(expired_payload, SECRET_KEY, algorithm=ALGORITHM)
-    
+
     activate_data = {"token": expired_token}
     r = client.post(
         f"{settings.API_V1_STR}/activation/activate",
@@ -134,13 +135,13 @@ def test_activation_key_usage_tracking(
     )
     token = r.json()["token"]
     jti = r.json()["jti"]
-    
+
     # Get initial state
     statement = select(ActivationKey).where(ActivationKey.jti == jti)
     result = db.exec(statement)
     key = result.first()
     initial_count = key.used_count
-    
+
     # Activate the key
     activate_data = {"token": token}
     r = client.post(
@@ -148,7 +149,7 @@ def test_activation_key_usage_tracking(
         json=activate_data,
     )
     assert r.status_code == 200
-    
+
     # Verify usage count increased
     db.expire_all()  # Refresh from database
     result = db.exec(statement)

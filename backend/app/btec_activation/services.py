@@ -1,8 +1,9 @@
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
+
 import jwt
-from typing import Tuple, Optional
 from sqlmodel import Session, select
+
 from app.btec_activation.models import ActivationKey
 
 SECRET_KEY = os.getenv("ACTIVATION_SECRET", "change-me-in-prod")
@@ -38,7 +39,7 @@ def create_activation_token(
     specialization: str,
     level: str,
     validity_days: int
-) -> Tuple[str, datetime]:
+) -> tuple[str, datetime]:
     """Create a JWT activation token."""
     payload = generate_token_payload(
         jti, student_id, email, specialization, level, validity_days
@@ -88,7 +89,7 @@ def verify_token(token: str) -> dict:
 async def consume_activation_token(
     session: Session,
     jti: str,
-    used_ip: Optional[str] = None
+    used_ip: str | None = None
 ) -> ActivationKey | None:
     """Consume activation token and update usage stats."""
     q = select(ActivationKey).where(ActivationKey.jti == jti)

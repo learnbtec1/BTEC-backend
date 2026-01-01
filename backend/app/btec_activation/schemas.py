@@ -1,14 +1,14 @@
 from datetime import datetime
+
 from pydantic import BaseModel
-from typing import Optional
 
 
 class ActivationCreate(BaseModel):
     """Schema for creating activation keys."""
     student_id: str
     student_email: str
-    specialization: Optional[str] = None
-    level: Optional[str] = None
+    specialization: str | None = None
+    level: str | None = None
     validity_days: int = 120  # default فصل دراسي تقريبي
 
 

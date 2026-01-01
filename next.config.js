@@ -5,7 +5,8 @@ const nextConfig = {
   i18n: {
     locales: ['ar', 'en'],
     defaultLocale: 'ar',
-    localeDetection: true,
+    // 👇 تم التعديل هنا لتصبح false لإصلاح الخطأ
+    localeDetection: false,
   },
   images: {
     domains: ['localhost'],

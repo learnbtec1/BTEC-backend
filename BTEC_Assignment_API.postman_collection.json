@@ -1,0 +1,379 @@
+{
+  "info": {
+    "name": "BTEC Assignment Management API",
+    "description": "Collection for testing the Assignment Management System with teacher and student roles",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "student_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "teacher_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "assignment_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login as Student (user1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set(\"student_token\", jsonData.access_token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "user1@btec.edu",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "1234",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/login/access-token",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "login", "access-token"]
+            }
+          }
+        },
+        {
+          "name": "Login as Teacher (teacher1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set(\"teacher_token\", jsonData.access_token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "teacher1@btec.edu",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "1234",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/login/access-token",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "login", "access-token"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Student Operations",
+      "item": [
+        {
+          "name": "Upload Assignment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set(\"assignment_id\", jsonData.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{student_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Math Homework Week 1",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Algebra exercises from chapter 3",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/assignments/upload",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "assignments", "upload"]
+            }
+          }
+        },
+        {
+          "name": "Get My Assignments",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{student_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/assignments/my",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "assignments", "my"]
+            }
+          }
+        },
+        {
+          "name": "Get Student Statistics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{student_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/assignments/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "assignments", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Download My Assignment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{student_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/assignments/{{assignment_id}}/download",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "assignments", "{{assignment_id}}", "download"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Teacher Operations",
+      "item": [
+        {
+          "name": "Get All Assignments",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacher_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/assignments/all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "assignments", "all"]
+            }
+          }
+        },
+        {
+          "name": "Grade Assignment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacher_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "grade",
+                  "value": "95",
+                  "type": "text"
+                },
+                {
+                  "key": "comments",
+                  "value": "Excellent work! Very thorough analysis.",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/assignments/{{assignment_id}}/grade",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "assignments", "{{assignment_id}}", "grade"]
+            }
+          }
+        },
+        {
+          "name": "Get Teacher Statistics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacher_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/assignments/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "assignments", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Download Student Assignment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacher_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/assignments/{{assignment_id}}/download",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "assignments", "{{assignment_id}}", "download"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Assignment",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{student_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/assignments/{{assignment_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assignments", "{{assignment_id}}"]
+        }
+      }
+    }
+  ]
+}

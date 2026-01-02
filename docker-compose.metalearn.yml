@@ -81,6 +81,77 @@ services:
       - metalearn_network
     restart: unless-stopped
 
+  # Virtual Campus Service
+  virtual_campus:
+    build:
+      context: ./services/virtual_campus
+      dockerfile: Dockerfile
+    container_name: metalearn_virtual_campus
+    environment:
+      - PORT=8004
+    ports:
+      - "8004:8004"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - metalearn_network
+    restart: unless-stopped
+
+  # Analytics Service
+  analytics:
+    build:
+      context: ./services/analytics
+      dockerfile: Dockerfile
+    container_name: metalearn_analytics
+    environment:
+      - PORT=8005
+    ports:
+      - "8005:8005"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - metalearn_network
+    restart: unless-stopped
+
+  # Simulations Service
+  simulations:
+    build:
+      context: ./services/simulations
+      dockerfile: Dockerfile
+    container_name: metalearn_simulations
+    environment:
+      - PORT=8006
+    ports:
+      - "8006:8006"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - metalearn_network
+    restart: unless-stopped
+
+  # Blockchain Service
+  blockchain:
+    build:
+      context: ./services/blockchain
+      dockerfile: Dockerfile
+    container_name: metalearn_blockchain
+    environment:
+      - PORT=8007
+      - ETHEREUM_RPC_URL=${ETHEREUM_RPC_URL}
+      - POLYGON_RPC_URL=${POLYGON_RPC_URL}
+      - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
+    ports:
+      - "8007:8007"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - metalearn_network
+    restart: unless-stopped
+
   # Backend API
   backend:
     build:
@@ -101,6 +172,10 @@ services:
       - ai_tutor
       - learning_companion
       - gamification
+      - virtual_campus
+      - analytics
+      - simulations
+      - blockchain
     networks:
       - metalearn_network
     restart: unless-stopped

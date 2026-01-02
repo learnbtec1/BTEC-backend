@@ -55,3 +55,27 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
             status_code=403, detail="The user doesn't have enough privileges"
         )
     return current_user
+
+
+def get_current_teacher(current_user: CurrentUser) -> User:
+    """Verify the current user is a teacher"""
+    if current_user.role != "teacher" and not current_user.is_superuser:
+        raise HTTPException(
+            status_code=403,
+            detail="Only teachers can access this resource",
+        )
+    return current_user
+
+
+def get_current_student(current_user: CurrentUser) -> User:
+    """Verify the current user is a student"""
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=403,
+            detail="Only students can access this resource",
+        )
+    return current_user
+
+
+TeacherUser = Annotated[User, Depends(get_current_teacher)]
+StudentUser = Annotated[User, Depends(get_current_student)]

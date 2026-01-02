@@ -19,12 +19,12 @@ class ResultsScreen extends StatelessWidget {
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: Colors.blue,
-                child: Text('\${index + 1}'),
+                child: Text('${index + 1}'),
               ),
-              title: Text('تقييم \${index + 1}'),
-              subtitle: Text('التاريخ: 2024-01-\${15 + index}'),
+              title: Text('تقييم ${index + 1}'),
+              subtitle: Text('التاريخ: ${DateTime.now().year}-01-${15 + index}'),
               trailing: Chip(
-                label: Text('\${85 + index}%'),
+                label: Text('${85 + index}%'),
                 backgroundColor: Colors.green.shade100,
               ),
               onTap: () {

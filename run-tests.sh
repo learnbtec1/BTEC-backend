@@ -74,9 +74,13 @@ run_test "Backend dependencies check" \
 run_test "Backend imports" \
     "cd backend && .venv/bin/python -c 'from app.main import app; print(\"OK\")' 2>&1 | grep -q OK" || true
 
-# Test 4: YAML validation
-run_test "YAML files validation" \
-    "yamllint -f parsable docker-compose.prod.yml .github/workflows/full-stack-auto.yml 2>&1 | grep -q error && exit 1 || exit 0"
+# Test 4: YAML validation (skip if yamllint not installed)
+if command -v yamllint &> /dev/null; then
+    run_test "YAML files validation" \
+        "yamllint -f parsable docker-compose.prod.yml .github/workflows/full-stack-auto.yml 2>&1 | grep -q error && exit 1 || exit 0"
+else
+    echo -e "${YELLOW}⚠️  yamllint not installed, skipping YAML validation${NC}"
+fi
 
 # Test 5: Environment file check
 run_test "Environment configuration" \

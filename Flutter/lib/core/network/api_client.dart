@@ -13,23 +13,23 @@ class ApiClient {
   };
   
   Future<dynamic> post(String endpoint, {Map<String, dynamic>? body}) async {
-    final uri = Uri.parse('\${ApiConstants.apiBase}\$endpoint');
+    final uri = Uri.parse('${ApiConstants.apiBase}$endpoint');
     final response = await http.post(uri, headers: _getHeaders(), 
       body: body != null ? jsonEncode(body) : null);
     
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return response.body.isEmpty ? null : jsonDecode(response.body);
     }
-    throw Exception('Error \${response.statusCode}: \${response.body}');
+    throw Exception('Error ${response.statusCode}: ${response.body}');
   }
   
   Future<dynamic> get(String endpoint) async {
-    final uri = Uri.parse('\${ApiConstants.apiBase}\$endpoint');
+    final uri = Uri.parse('${ApiConstants.apiBase}$endpoint');
     final response = await http.get(uri, headers: _getHeaders());
     
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
-    throw Exception('Error \${response.statusCode}');
+    throw Exception('Error ${response.statusCode}');
   }
 }

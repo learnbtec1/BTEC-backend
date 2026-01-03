@@ -44,6 +44,9 @@ class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
+    student_progress: list["StudentProgress"] = Relationship(
+        back_populates="user", cascade_delete=True
+    )
 
 
 # Properties to return via API, id is always required
@@ -60,6 +63,7 @@ class UsersPublic(SQLModel):
 class ItemBase(SQLModel):
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=255)
+    ar_model_url: str | None = Field(default=None, max_length=2048)
 
 
 # Properties to receive on item creation
@@ -111,3 +115,46 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str = Field(min_length=8, max_length=128)
+
+
+# Shared properties for StudentProgress
+class StudentProgressBase(SQLModel):
+    module_name: str = Field(max_length=255)
+    progress: int = Field(ge=0, le=100)  # Progress percentage 0-100
+    struggling: bool = Field(default=False)
+    last_score: float | None = Field(default=None, ge=0, le=100)
+    attempts: int = Field(default=0, ge=0)
+
+
+# Properties to receive on creation
+class StudentProgressCreate(StudentProgressBase):
+    pass
+
+
+# Properties to receive on update
+class StudentProgressUpdate(SQLModel):
+    module_name: str | None = Field(default=None, max_length=255)
+    progress: int | None = Field(default=None, ge=0, le=100)
+    struggling: bool | None = Field(default=None)
+    last_score: float | None = Field(default=None, ge=0, le=100)
+    attempts: int | None = Field(default=None, ge=0)
+
+
+# Database model
+class StudentProgress(StudentProgressBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+    user: User | None = Relationship(back_populates="student_progress")
+
+
+# Properties to return via API
+class StudentProgressPublic(StudentProgressBase):
+    id: uuid.UUID
+    user_id: uuid.UUID
+
+
+class StudentProgressListPublic(SQLModel):
+    data: list[StudentProgressPublic]
+    count: int

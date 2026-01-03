@@ -1,5 +1,6 @@
-import textdistance
 import Levenshtein
+import textdistance
+
 
 def evaluate_text(student_answer: str, model_answer: str) -> dict:
     similarity = textdistance.cosine.normalized_similarity(student_answer, model_answer)

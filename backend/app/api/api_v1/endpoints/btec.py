@@ -1,8 +1,10 @@
-from fastapi import APIRouter, UploadFile, File, Form
-from app.btec_engine.text_evaluator import evaluate_text
-from app.btec_engine.audio_evaluator import transcribe_audio
-import tempfile
 import os
+import tempfile
+
+from fastapi import APIRouter, File, Form, UploadFile
+
+from app.btec_engine.audio_evaluator import transcribe_audio
+from app.btec_engine.text_evaluator import evaluate_text
 
 router = APIRouter()
 

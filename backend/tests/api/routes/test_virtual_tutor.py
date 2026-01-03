@@ -3,6 +3,7 @@ from sqlmodel import Session
 
 from app import crud
 from app.core.config import settings
+from app.core.security import create_access_token
 from app.models import StudentProgressCreate
 from tests.utils.user import create_random_user
 from tests.utils.utils import get_superuser_token_headers
@@ -46,9 +47,6 @@ def test_get_virtual_tutor_recommendations_with_progress(
     client: TestClient, normal_user_token_headers: dict[str, str], db: Session
 ) -> None:
     """Test recommendations with actual progress data."""
-    # Get the user from the token
-    from tests.utils.user import authentication_token_from_email
-    
     # Create a test user with progress
     user = create_random_user(db)
     
@@ -76,7 +74,6 @@ def test_get_virtual_tutor_recommendations_with_progress(
     )
     
     # Get token for this user
-    from app.core.security import create_access_token
     token = create_access_token(str(user.id))
     headers = {"Authorization": f"Bearer {token}"}
     
@@ -126,7 +123,6 @@ def test_virtual_tutor_recommendations_ar_simulations(
         )
     
     # Get token for this user
-    from app.core.security import create_access_token
     token = create_access_token(str(user.id))
     headers = {"Authorization": f"Bearer {token}"}
     

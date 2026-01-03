@@ -71,6 +71,8 @@ class ItemCreate(ItemBase):
 # Properties to receive on item update
 class ItemUpdate(ItemBase):
     title: str | None = Field(default=None, min_length=1, max_length=255)  # type: ignore
+    description: str | None = Field(default=None, max_length=255)  # type: ignore
+    ar_model_url: str | None = Field(default=None, max_length=512)  # type: ignore
 
 
 # Database model, database table inferred from class name
@@ -86,7 +88,6 @@ class Item(ItemBase, table=True):
 class ItemPublic(ItemBase):
     id: uuid.UUID
     owner_id: uuid.UUID
-    ar_model_url: str | None = None
 
 
 class ItemsPublic(SQLModel):

@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 
 from app.api.deps import CurrentUser, SessionDep
 from app.virtual_tutor import recommend_remediation
@@ -27,18 +27,12 @@ def get_tutor_recommendations(
     Returns:
         Dictionary with recommendations list
     """
-    try:
-        recommendations = recommend_remediation(
-            session=session, user=current_user, threshold=threshold
-        )
-        return {
-            "user_id": str(current_user.id),
-            "user_email": current_user.email,
-            "threshold": threshold,
-            "recommendations": recommendations,
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error generating recommendations: {str(e)}",
-        )
+    recommendations = recommend_remediation(
+        session=session, user=current_user, threshold=threshold
+    )
+    return {
+        "user_id": str(current_user.id),
+        "user_email": current_user.email,
+        "threshold": threshold,
+        "recommendations": recommendations,
+    }

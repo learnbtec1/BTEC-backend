@@ -4,7 +4,16 @@ from typing import Any
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
-from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
+from app.models import (
+    Item,
+    ItemCreate,
+    StudentProgress,
+    StudentProgressCreate,
+    StudentProgressUpdate,
+    User,
+    UserCreate,
+    UserUpdate,
+)
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -52,3 +61,47 @@ def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -
     session.commit()
     session.refresh(db_item)
     return db_item
+
+
+def create_student_progress(
+    *, session: Session, progress_in: StudentProgressCreate, student_id: uuid.UUID
+) -> StudentProgress:
+    db_progress = StudentProgress.model_validate(
+        progress_in, update={"student_id": student_id}
+    )
+    session.add(db_progress)
+    session.commit()
+    session.refresh(db_progress)
+    return db_progress
+
+
+def get_student_progress(
+    *, session: Session, progress_id: uuid.UUID
+) -> StudentProgress | None:
+    return session.get(StudentProgress, progress_id)
+
+
+def update_student_progress(
+    *,
+    session: Session,
+    db_progress: StudentProgress,
+    progress_in: StudentProgressUpdate,
+) -> StudentProgress:
+    progress_data = progress_in.model_dump(exclude_unset=True)
+    db_progress.sqlmodel_update(progress_data)
+    session.add(db_progress)
+    session.commit()
+    session.refresh(db_progress)
+    return db_progress
+
+
+def list_student_progress(
+    *, session: Session, student_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> list[StudentProgress]:
+    statement = (
+        select(StudentProgress)
+        .where(StudentProgress.student_id == student_id)
+        .offset(skip)
+        .limit(limit)
+    )
+    return list(session.exec(statement).all())

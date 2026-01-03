@@ -44,6 +44,9 @@ class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
+    student_progress: list["StudentProgress"] = Relationship(
+        back_populates="user", cascade_delete=True
+    )
 
 
 # Properties to return via API, id is always required
@@ -60,6 +63,7 @@ class UsersPublic(SQLModel):
 class ItemBase(SQLModel):
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=255)
+    ar_model_url: str | None = Field(default=None, max_length=2048)
 
 
 # Properties to receive on item creation
@@ -111,3 +115,35 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str = Field(min_length=8, max_length=128)
+
+
+# StudentProgress models
+class StudentProgressBase(SQLModel):
+    module_name: str = Field(max_length=255)
+    progress_percentage: int = Field(ge=0, le=100)
+    struggling: bool = False
+    last_activity: str | None = Field(default=None, max_length=255)
+
+
+class StudentProgressCreate(StudentProgressBase):
+    pass
+
+
+class StudentProgressUpdate(SQLModel):
+    module_name: str | None = Field(default=None, max_length=255)
+    progress_percentage: int | None = Field(default=None, ge=0, le=100)
+    struggling: bool | None = None
+    last_activity: str | None = Field(default=None, max_length=255)
+
+
+class StudentProgress(StudentProgressBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+    user: User | None = Relationship(back_populates="student_progress")
+
+
+class StudentProgressPublic(StudentProgressBase):
+    id: uuid.UUID
+    user_id: uuid.UUID

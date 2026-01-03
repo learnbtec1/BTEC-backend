@@ -126,7 +126,7 @@ def get_struggling_modules_for_user(
     """Get modules where user is struggling (progress < threshold or struggling flag set)."""
     statement = select(StudentProgress).where(
         StudentProgress.user_id == user_id,
-        (StudentProgress.struggling == True)  # noqa: E712
+        (StudentProgress.struggling.is_(True))
         | (StudentProgress.progress < progress_threshold),
     )
     return list(session.exec(statement).all())

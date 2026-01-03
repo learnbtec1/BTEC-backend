@@ -60,6 +60,7 @@ class UsersPublic(SQLModel):
 class ItemBase(SQLModel):
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=255)
+    ar_model_url: str | None = Field(default=None, max_length=512)
 
 
 # Properties to receive on item creation
@@ -85,10 +86,53 @@ class Item(ItemBase, table=True):
 class ItemPublic(ItemBase):
     id: uuid.UUID
     owner_id: uuid.UUID
+    ar_model_url: str | None = None
 
 
 class ItemsPublic(SQLModel):
     data: list[ItemPublic]
+    count: int
+
+
+# Shared properties for StudentProgress
+class StudentProgressBase(SQLModel):
+    subject: str = Field(max_length=255)
+    topic: str = Field(max_length=255)
+    score: float = Field(ge=0.0, le=100.0)  # Score between 0 and 100
+    completed: bool = Field(default=False)
+    notes: str | None = Field(default=None, max_length=1000)
+
+
+# Properties to receive on creation
+class StudentProgressCreate(StudentProgressBase):
+    pass
+
+
+# Properties to receive on update
+class StudentProgressUpdate(StudentProgressBase):
+    subject: str | None = Field(default=None, max_length=255)  # type: ignore
+    topic: str | None = Field(default=None, max_length=255)  # type: ignore
+    score: float | None = Field(default=None, ge=0.0, le=100.0)  # type: ignore
+    completed: bool | None = None  # type: ignore
+    notes: str | None = Field(default=None, max_length=1000)  # type: ignore
+
+
+# Database model for StudentProgress
+class StudentProgress(StudentProgressBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    student_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+
+
+# Properties to return via API
+class StudentProgressPublic(StudentProgressBase):
+    id: uuid.UUID
+    student_id: uuid.UUID
+
+
+class StudentProgressesPublic(SQLModel):
+    data: list[StudentProgressPublic]
     count: int
 
 

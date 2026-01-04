@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlmodel import Field, SQLModel
 
@@ -13,7 +13,7 @@ class UserFile(SQLModel, table=True):
     filename: str = Field(max_length=255)
     stored_path: str = Field(max_length=500)
     content_type: str | None = Field(default=None, max_length=100)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # Properties to return via API

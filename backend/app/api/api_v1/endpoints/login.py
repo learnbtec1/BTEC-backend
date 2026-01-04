@@ -8,7 +8,7 @@ from app.api.deps import SessionDep
 from app.core import security
 from app.core.config import settings
 from app.crud import authenticate, create_user, get_user_by_email
-from app.models import Token, UserPublic, UserRegister
+from app.models import Token, UserCreate, UserPublic, UserRegister
 
 router = APIRouter()
 
@@ -51,8 +51,6 @@ def register_user(
         )
 
     # Create new user
-    from app.models import UserCreate
-
     user_create = UserCreate(
         email=user_in.email,
         password=user_in.password,

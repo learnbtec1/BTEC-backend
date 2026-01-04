@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11']
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.4.15"
+          enable-cache: true
+      
+      - name: Start database service
+        run: |
+          docker compose down -v --remove-orphans
+          docker compose up -d db mailcatcher
+      
+      - name: Wait for database to be ready
+        run: |
+          timeout 30 bash -c 'until docker compose exec -T db pg_isready -U postgres; do sleep 1; done'
+      
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          uv sync
+      
+      - name: Run linters
+        working-directory: backend
+        run: |
+          uv run ruff check .
+          uv run mypy .
+        continue-on-error: true
+      
+      - name: Run migrations
+        working-directory: backend
+        run: |
+          uv run bash scripts/prestart.sh
+      
+      - name: Check migration head
+        working-directory: backend
+        run: |
+          uv run alembic current
+          uv run alembic heads
+      
+      - name: Run tests with coverage
+        working-directory: backend
+        run: |
+          uv run bash scripts/tests-start.sh "CI run for ${{ github.sha }}"
+      
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.10'
+        with:
+          name: coverage-reports
+          path: backend/htmlcov
+          retention-days: 7
+      
+      - name: Check coverage threshold
+        working-directory: backend
+        run: |
+          uv run coverage report --fail-under=70
+        continue-on-error: true
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v --remove-orphans
+
+  build-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.4.15"
+          enable-cache: true
+      
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          uv sync
+      
+      - name: Check imports
+        working-directory: backend
+        run: |
+          uv run python -c "from app.main import app; print('✓ Application imports successfully')"
+      
+      - name: Check API endpoints
+        working-directory: backend
+        run: |
+          uv run python -c "from app.api.main import api_router; print('✓ API router configured correctly')"

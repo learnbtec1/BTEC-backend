@@ -1,0 +1,247 @@
+name: Nightly Smoke Tests
+
+on:
+  schedule:
+    # Run at 01:00, 03:00, 05:00, and 07:00 UTC
+    - cron: '0 1,3,5,7 * * *'
+  workflow_dispatch:
+    inputs:
+      run_full_suite:
+        description: 'Run full test suite'
+        required: false
+        default: 'false'
+
+jobs:
+  smoke-test:
+    name: Smoke Test - Backend API
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: smoke_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          uv sync
+      
+      - name: Set environment variables
+        run: |
+          echo "POSTGRES_SERVER=localhost" >> $GITHUB_ENV
+          echo "POSTGRES_USER=postgres" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=postgres" >> $GITHUB_ENV
+          echo "POSTGRES_DB=smoke_test_db" >> $GITHUB_ENV
+          echo "SECRET_KEY=smoke-test-secret-key-$(date +%s)" >> $GITHUB_ENV
+          echo "FIRST_SUPERUSER=admin@smoketest.com" >> $GITHUB_ENV
+          echo "FIRST_SUPERUSER_PASSWORD=smoketest123" >> $GITHUB_ENV
+          echo "PROJECT_NAME=BTEC Smoke Test" >> $GITHUB_ENV
+      
+      - name: Run migrations
+        working-directory: ./backend
+        run: |
+          uv run alembic upgrade head
+      
+      - name: Seed demo data
+        working-directory: ./backend
+        run: |
+          uv run python scripts/seed_demo.py
+      
+      - name: Start backend server
+        working-directory: ./backend
+        run: |
+          uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          echo $! > server.pid
+          sleep 10
+      
+      - name: Health check
+        run: |
+          curl -f http://localhost:8000/api/v1/utils/health-check || exit 1
+      
+      - name: Test login endpoint
+        run: |
+          TOKEN=$(curl -s -X POST "http://localhost:8000/api/v1/login/access-token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "username=student1@example.com&password=student123" \
+            | jq -r '.access_token')
+          
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "Failed to get access token"
+            exit 1
+          fi
+          
+          echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
+          echo "✓ Login successful"
+      
+      - name: Test file upload
+        run: |
+          echo "Test file content" > test_file.txt
+          
+          RESPONSE=$(curl -s -X POST "http://localhost:8000/api/v1/files/upload" \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -F "file=@test_file.txt")
+          
+          FILE_ID=$(echo $RESPONSE | jq -r '.id')
+          
+          if [ -z "$FILE_ID" ] || [ "$FILE_ID" = "null" ]; then
+            echo "Failed to upload file"
+            echo "Response: $RESPONSE"
+            exit 1
+          fi
+          
+          echo "FILE_ID=$FILE_ID" >> $GITHUB_ENV
+          echo "✓ File upload successful"
+      
+      - name: Test list files
+        run: |
+          RESPONSE=$(curl -s -X GET "http://localhost:8000/api/v1/files/" \
+            -H "Authorization: Bearer $ACCESS_TOKEN")
+          
+          COUNT=$(echo $RESPONSE | jq -r '.count')
+          
+          if [ "$COUNT" -lt 1 ]; then
+            echo "No files found"
+            echo "Response: $RESPONSE"
+            exit 1
+          fi
+          
+          echo "✓ List files successful (found $COUNT files)"
+      
+      - name: Test assistant query
+        run: |
+          RESPONSE=$(curl -s -X POST "http://localhost:8000/api/v1/assistant/query" \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"prompt": "Help me with my progress", "context": "struggling with programming"}')
+          
+          ANSWER=$(echo $RESPONSE | jq -r '.answer')
+          
+          if [ -z "$ANSWER" ] || [ "$ANSWER" = "null" ]; then
+            echo "Failed to get assistant response"
+            echo "Response: $RESPONSE"
+            exit 1
+          fi
+          
+          echo "✓ Assistant query successful"
+          echo "Assistant answer: $ANSWER"
+      
+      - name: Test file download
+        run: |
+          curl -s -X GET "http://localhost:8000/api/v1/files/$FILE_ID" \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -o downloaded_file.txt
+          
+          if [ ! -f downloaded_file.txt ]; then
+            echo "Failed to download file"
+            exit 1
+          fi
+          
+          echo "✓ File download successful"
+      
+      - name: Test file deletion
+        run: |
+          RESPONSE=$(curl -s -X DELETE "http://localhost:8000/api/v1/files/$FILE_ID" \
+            -H "Authorization: Bearer $ACCESS_TOKEN")
+          
+          MESSAGE=$(echo $RESPONSE | jq -r '.message')
+          
+          if [ "$MESSAGE" != "File deleted successfully" ]; then
+            echo "Failed to delete file"
+            echo "Response: $RESPONSE"
+            exit 1
+          fi
+          
+          echo "✓ File deletion successful"
+      
+      - name: Run full test suite
+        if: github.event.inputs.run_full_suite == 'true'
+        working-directory: ./backend
+        run: |
+          uv run pytest tests/ -v
+      
+      - name: Stop backend server
+        if: always()
+        working-directory: ./backend
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+          fi
+      
+      - name: Smoke test summary
+        if: always()
+        run: |
+          echo "### Smoke Test Results 🌙" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Health check" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Login endpoint" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ File upload" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ List files" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Assistant query" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ File download" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ File deletion" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All smoke tests passed successfully!" >> $GITHUB_STEP_SUMMARY
+
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: smoke-test
+    if: failure()
+    
+    steps:
+      - name: Create issue on failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🚨 Nightly Smoke Test Failed - ${new Date().toISOString().split('T')[0]}`;
+            const body = `The nightly smoke test failed at ${new Date().toISOString()}.
+            
+            Please investigate the failure in the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}).
+            
+            ### Quick Links
+            - [Workflow Run](${context.payload.repository.html_url}/actions/runs/${context.runId})
+            - [Latest Commit](${context.payload.repository.html_url}/commit/${context.sha})
+            
+            cc: @learnbtec1`;
+            
+            // Check if similar issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'smoke-test-failure'
+            });
+            
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['smoke-test-failure', 'bug']
+              });
+            }
